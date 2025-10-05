@@ -1,0 +1,10 @@
+mangum
+SQLAlchemy
+psycopg2-binary
+fastapi[standard]
+humanize
+phonenumbers
+pycountry
+emoji-country-flag
+countryinfo
+requests

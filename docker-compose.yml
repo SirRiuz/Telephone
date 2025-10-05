@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - ${DATABASE_PORT:-}:${DATABASE_PORT:-}
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: -p ${DATABASE_PORT:-}
+
+  web:
+    restart: always
+    command: fastapi dev main.py --host 0.0.0.0 --port ${SERVER_PORT:-}
+    container_name: telephone
+    tty: true
+    build:
+      context: .
+    environment:
+      # Project env config.
+      - DEBUG=${DEBUG:-}
+
+      # Database config.
+      - DATABASE_HOST=${DATABASE_HOST:-}
+      - DATABASE_NAME=${DATABASE_NAME:-}
+      - DATABASE_USER=${DATABASE_USER:-}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-}
+      - DATABASE_PORT=${DATABASE_PORT:-}
+      - USE_DATABASE=${USE_DATABASE:-}
+      - SECRET_KEY=${SECRET_KEY:-}
+      - ALLOWER_CORS_ORIGINS=${ALLOWER_CORS_ORIGINS:-}
+
+      # Twilio config
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+
+      # OpenIA config
+      - OPENIA_API_KEY=${OPENIA_API_KEY:-}
+
+    volumes:
+      - .:/app:Z
+    depends_on:
+      - postgres
+
+  nginx:
+    image: nginx_server
+    restart: always
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    ports:
+      - ${SERVER_PORT:-}:${SERVER_PORT:-}
+    depends_on:
+      - web
